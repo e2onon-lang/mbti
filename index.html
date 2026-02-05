@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>荣格八维深度性格测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // --- 60题库数据 ---
+        const questions = [
+            { id: 1, func: 'Se', text: '去一个新地方旅游，比起查攻略，我更喜欢到那儿以后随性乱逛。' },
+            { id: 2, func: 'Se', text: '看到喜欢的零食或新款鞋子，我通常很难忍住不立刻下单尝试。' },
+            { id: 3, func: 'Se', text: '我能很快注意到朋友今天换了发色、香水或者是情绪的小波动。' },
+            { id: 4, func: 'Se', text: '压力大的时候，比起找人倾诉，我更想去大吃一顿或者疯狂运动。' },
+            { id: 5, func: 'Se', text: '比起听枯燥的理论课，我更愿意直接动手操作，在试错中学习。' },
+            { id: 6, func: 'Se', text: '我很享受那种肾上腺素飙升的感觉，比如玩过山车或是即兴的户外冒险。' },
+            { id: 7, func: 'Se', text: '周围环境的噪音、光线或温度稍有变化，我往往是第一个察觉并感到不适的人。' },
+            { id: 8, func: 'Si', text: '收拾行李时，我会反复确认钥匙和证件，甚至拍张照记录自己带了。' },
+            { id: 9, func: 'Si', text: '我习惯在固定的几家店点固定的外卖，尝试新品对我来说有点冒险。' },
+            { id: 10, func: 'Si', text: '我能清晰地记得几年前某个特殊日子的细节，甚至是当时的天气和穿着。' },
+            { id: 11, func: 'Si', text: '如果日常生活的稳定节奏被突然打乱，我会感到非常焦躁不安。' },
+            { id: 12, func: 'Si', text: '做决定时，我更愿意相信自己过去亲身经历过的教训，而不是所谓的专家建议。' },
+            { id: 13, func: 'Si', text: '我很看重传统和仪式感，比如过年一定要吃某样菜，或者纪念日一定要有特定流程。' },
+            { id: 14, func: 'Si', text: '处理文件或整理房间时，我会强迫自己把东西归位到习惯的地方。' },
+            { id: 15, func: 'Ne', text: '刷短视频时我经常会从一个科普跳到八卦，最后完全忘了最初要查什么。' },
+            { id: 16, func: 'Ne', text: '我脑子里总有很多“如果...会怎样”的古怪念头，即便它们现在看来很不现实。' },
+            { id: 17, func: 'Ne', text: '我很怕生活一眼望得到头，总想尝试跨度巨大的职业或生活方式。' },
+            { id: 18, func: 'Ne', text: '看到一个简单的东西，我能迅速联想到它在不同场景下的十几种用途。' },
+            { id: 19, func: 'Ne', text: '聊天时我经常会即兴抛出新话题，让对话变得跳跃而有趣。' },
+            { id: 20, func: 'Ne', text: '我会同时开启好几个兴趣爱好，尽管大多只有三分钟热度。' },
+            { id: 21, func: 'Ne', text: '我喜欢通过冷笑话、双关语或脑洞大开的比喻来调节聚会气氛。' },
+            { id: 22, func: 'Ni', text: '我总能感觉到一段关系里隐藏的危机，即便当事人还没表现出来。' },
+            { id: 23, func: 'Ni', text: '看悬疑片时，我经常在剧情过半时就直觉闪现，猜出幕后黑手。' },
+            { id: 24, func: 'Ni', text: '我思考问题很跳跃，经常得出结论后却很难向别人解释我是怎么想到的。' },
+            { id: 25, func: 'Ni', text: '比起当下的琐碎工作，我更关心三年、五年后我会成为什么样的人。' },
+            { id: 26, func: 'Ni', text: '我喜欢探究事物背后的深意，总觉得很多巧合其实是某种规律的体现。' },
+            { id: 27, func: 'Ni', text: '我经常会有那种“似曾相识”的预见感，仿佛某些事情注定会发生。' },
+            { id: 28, func: 'Ni', text: '比起具体的细节描述，我更擅长捕捉整件事的大致轮廓和未来导向。' },
+            { id: 29, func: 'Te', text: '跟朋友去旅游，如果没人带头做攻略、定餐厅，我会觉得这趟行程很混乱。' },
+            { id: 30, func: 'Te', text: '我喜欢列各种清单，看着任务被一个个划掉会给我带来极大的爽感。' },
+            { id: 31, func: 'Te', text: '当大家在会上犹豫不决时，我会忍不住跳出来梳理逻辑并督促大家定论。' },
+            { id: 32, func: 'Te', text: '我买东西非常看重性价比和实用性，不太会被华丽的营销话术洗脑。' },
+            { id: 33, func: 'Te', text: '在评价一个人时，我首先看TA拿出了什么结果，而不是听TA讲了多少苦劳。' },
+            { id: 34, func: 'Te', text: '如果发现某个办事流程效率极低，我会立即想办法制定一套新规则。' },
+            { id: 35, func: 'Te', text: '我很在乎时间成本，不喜欢为了“维持体面”而进行没有意义的社交寒暄。' },
+            { id: 36, func: 'Ti', text: '面对那种“大家都这么说”的观点，我非得自己查查资料证伪了才放心。' },
+            { id: 37, func: 'Ti', text: '我喜欢钻研复杂的东西，哪怕是一个冷门的游戏机制我也能研究好几天。' },
+            { id: 38, func: 'Ti', text: '我追求表达的极端准确，有时会纠正别人说话中细微的逻辑错误。' },
+            { id: 39, func: 'Ti', text: '比起按照手册操作，我更想拆开来看看这个机器内部到底是怎么转的。' },
+            { id: 40, func: 'Ti', text: '我有一套高度自洽的个人逻辑，外界的流行观点很难干扰我的独立判断。' },
+            { id: 41, func: 'Ti', text: '在没彻底想通一件事的原理之前，我很难强迫自己盲目开始执行。' },
+            { id: 42, func: 'Ti', text: '我享受独处思考的宁静，那是我大脑理顺杂乱信息的黄金时间。' },
+            { id: 43, func: 'Fe', text: '聊天时如果气氛突然尴尬，我会下意识讲个冷笑话或者转移话题来救场。' },
+            { id: 44, func: 'Fe', text: '我非常在意大家对我的看法，如果知道有人讨厌我，我会郁闷很久。' },
+            { id: 45, func: 'Fe', text: '做决定时，我会下意识考虑这个举动会不会让身边的朋友感到不适。' },
+            { id: 46, func: 'Fe', text: '我很擅长根据对方当下的情绪，灵活切换我的说话语气和内容。' },
+            { id: 47, func: 'Fe', text: '当我看到别人受委屈时，即便跟我没关系，我也能瞬间感同身受并想去安慰。' },
+            { id: 48, func: 'Fe', text: '我倾向于为了维护群体的和谐，而在某些时候牺牲自己的一点小诉求。' },
+            { id: 49, func: 'Fe', text: '我是朋友圈里的“粘合剂”，总想把大家都聚在一起开开心心的。' },
+            { id: 50, func: 'Fi', text: '看电影时，我更关注角色内心隐秘的痛苦，而非那种激烈的冲突剧情。' },
+            { id: 51, func: 'Fi', text: '有些底线我绝不会触碰，哪怕周围所有人都觉得那只是一件微不足道的小事。' },
+            { id: 52, func: 'Fi', text: '我很反感职场里那些虚伪的客套话，觉得这样沟通非常消耗我的能量。' },
+            { id: 53, func: 'Fi', text: '我的心情更像是一种暗流涌动，很难用语言精准地向外人描述。' },
+            { id: 54, func: 'Fi', text: '在购买东西时，我只买那种能代表我品味和个性的，绝不随大流。' },
+            { id: 55, func: 'Fi', text: '如果我做的事情违背了我的内心价值，我会产生极其强烈的自我厌恶感。' },
+            { id: 56, func: 'Fi', text: '比起热闹的聚会，我更喜欢跟一两个能聊灵魂话题的知心朋友深谈。' },
+            { id: 57, func: 'Si', text: '我习惯在做事之前先把所有的工具和材料准备停当。' },
+            { id: 58, func: 'Ni', text: '我经常通过一些象征性的符号或是隐喻来思考生活。' },
+            { id: 59, func: 'Te', text: '我更喜欢结果明确的短平快任务，而不是需要长期磨洋工的事。' },
+            { id: 60, func: 'Fe', text: '我发现自己很容易受到别人好心情的感染，变得非常有活力。' }
+        ];
+
+        const mbtiDict = {
+            'INTJ': { title: '建筑师', brief: '独立、理性的战略大师' },
+            'INTP': { title: '逻辑学家', brief: '好奇、客观的思想者' },
+            'ENTJ': { title: '指挥官', brief: '自信、果断的领导者' },
+            'ENTP': { title: '辩论家', brief: '敏捷、大胆的挑战者' },
+            'INFJ': { title: '提倡者', brief: '深沉、利他的洞察者' },
+            'INFP': { title: '调解员', brief: '理想主义、坚定的守护者' },
+            'ENFJ': { title: '主人公', brief: '热情、迷人的协作专家' },
+            'ENFP': { title: '竞选者', brief: '自由、热情的创意源泉' },
+            'ISTJ': { title: '物流师', brief: '务实、可靠的规则执行者' },
+            'ISFJ': { title: '守卫者', brief: '勤奋、温和的奉献者' },
+            'ESTJ': { title: '总经理', brief: '高效、严谨的管理者' },
+            'ESFJ': { title: '执政官', brief: '合群、体贴的组织达人' },
+            'ISTP': { title: '鉴赏家', brief: '冷静、灵活的行动派' },
+            'ISFP': { title: '探险家', brief: '感性、追求美感的自由人' },
+            'ESTP': { title: '企业家', brief: '机敏、冒险的实战派' },
+            'ESFP': { title: '表演者', brief: '乐观、合群的快乐天使' }
+        };
+
+        const App = () => {
+            const [step, setStep] = useState('home');
+            const [currentIdx, setCurrentIdx] = useState(0);
+            const [answers, setAnswers] = useState({});
+
+            const options = [
+                { label: '不符', val: 1, color: 'bg-red-50 text-red-500' },
+                { label: '较不符', val: 2, color: 'bg-orange-50 text-orange-500' },
+                { label: '一般', val: 3, color: 'bg-gray-100 text-gray-500' },
+                { label: '较符合', val: 4, color: 'bg-blue-50 text-blue-500' },
+                { label: '很符合', val: 5, color: 'bg-green-50 text-green-500' }
+            ];
+
+            const handleSelect = (val) => {
+                const newAnswers = { ...answers, [questions[currentIdx].id]: val };
+                setAnswers(newAnswers);
+                if (currentIdx < questions.length - 1) {
+                    setCurrentIdx(currentIdx + 1);
+                } else {
+                    setStep('loading');
+                    setTimeout(() => setStep('result'), 1500);
+                }
+            };
+
+            const results = useMemo(() => {
+                if (step !== 'result') return null;
+                const scores = { Se: 0, Si: 0, Ne: 0, Ni: 0, Te: 0, Ti: 0, Fe: 0, Fi: 0 };
+                Object.keys(answers).forEach(id => {
+                    const q = questions.find(item => item.id === parseInt(id));
+                    if (q) scores[q.func] += answers[id];
+                });
+
+                const normalized = {};
+                Object.keys(scores).forEach(k => {
+                    const count = questions.filter(q => q.func === k).length;
+                    normalized[k] = Math.round((scores[k] / (count * 5)) * 100);
+                });
+
+                const E = normalized.Se + normalized.Ne + normalized.Te + normalized.Fe;
+                const I = normalized.Si + normalized.Ni + normalized.Ti + normalized.Fi;
+                const S = normalized.Se + normalized.Si;
+                const N = normalized.Ne + normalized.Ni;
+                const T = normalized.Te + normalized.Ti;
+                const F = normalized.Fe + normalized.Fi;
+                const J = normalized.Te + normalized.Fe + normalized.Si + normalized.Ni;
+                const P = normalized.Ti + normalized.Fi + normalized.Se + normalized.Ne;
+
+                const code = (E >= I ? 'E' : 'I') + (S >= N ? 'S' : 'N') + (T >= F ? 'T' : 'F') + (J >= P ? 'J' : 'P');
+                return { normalized, code, E_pct: Math.round((E/(E+I))*100), S_pct: Math.round((S/(S+N))*100), T_pct: Math.round((T/(T+F))*100), J_pct: Math.round((J/(J+P))*100) };
+            }, [answers, step]);
+
+            const goBack = () => {
+                if (currentIdx > 0) setCurrentIdx(currentIdx - 1);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-100 p-2 sm:p-4">
+                    <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl overflow-hidden animate-fade-in flex flex-col h-[90vh] max-h-[800px]">
+                        
+                        {/* 头部固定 */}
+                        <div className="bg-slate-900 py-5 px-6 shrink-0 flex justify-between items-center text-white">
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold text-lg tracking-tight">人格深度测评</span>
+                            </div>
+                            {step === 'quiz' && (
+                                <span className="text-[10px] font-mono bg-slate-800 px-2 py-1 rounded">进度 {Math.round(((currentIdx + 1) / questions.length) * 100)}%</span>
+                            )}
+                        </div>
+
+                        {/* 内容滚动区 */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                            {step === 'home' && (
+                                <div className="text-center py-10 space-y-6">
+                                    <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto text-indigo-600 text-3xl font-black">8</div>
+                                    <h2 className="text-2xl font-black text-slate-800">深度挖掘<br/>你的精神底层逻辑</h2>
+                                    <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
+                                        拒绝生硬的标签定义。通过 60 个真实的生活细节，量化你的感知习惯与决策模型。
+                                    </p>
+                                    <button onClick={() => setStep('quiz')} className="w-full bg-indigo-600 py-4 rounded-2xl text-white font-bold text-lg shadow-lg active:scale-95 transition-all">
+                                        开始测试
+                                    </button>
+                                </div>
+                            )}
+
+                            {step === 'quiz' && (
+                                <div className="space-y-8 animate-fade-in">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={goBack} className={`text-slate-400 text-sm ${currentIdx === 0 ? 'invisible' : ''}`}>← 返回</button>
+                                        <span className="text-[10px] font-bold text-slate-300 tracking-widest uppercase">Question {currentIdx + 1}</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold leading-relaxed text-slate-800 min-h-[100px]">
+                                        {questions[currentIdx].text}
+                                    </h3>
+                                    <div className="grid grid-cols-1 gap-3 pb-4">
+                                        {options.map((opt) => (
+                                            <button 
+                                                key={opt.val} 
+                                                onClick={() => handleSelect(opt.val)} 
+                                                className={`py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] ${opt.color} border border-transparent`}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 'loading' && (
+                                <div className="py-20 text-center space-y-6">
+                                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                    <h3 className="text-lg font-bold text-slate-800">正在分析您的行为模式...</h3>
+                                </div>
+                            )}
+
+                            {step === 'result' && results && (
+                                <div className="animate-fade-in space-y-8">
+                                    <div className="text-center">
+                                        <span className="text-6xl font-black text-slate-900 tracking-tighter">{results.code}</span>
+                                        <h2 className="text-xl font-bold mt-2 text-slate-800">{mbtiDict[results.code]?.title}</h2>
+                                        <p className="text-indigo-600 font-medium text-xs tracking-widest mt-1">“{mbtiDict[results.code]?.brief}”</p>
+                                    </div>
+
+                                    <div className="bg-slate-50 p-6 rounded-3xl space-y-4">
+                                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">八维能量分布</h4>
+                                        {[
+                                            { name: 'Ne 外倾直觉', val: results.normalized.Ne, color: 'bg-emerald-400' },
+                                            { name: 'Ni 内倾直觉', val: results.normalized.Ni, color: 'bg-emerald-600' },
+                                            { name: 'Se 外倾感觉', val: results.normalized.Se, color: 'bg-amber-400' },
+                                            { name: 'Si 内倾感觉', val: results.normalized.Si, color: 'bg-amber-600' },
+                                            { name: 'Te 外倾思考', val: results.normalized.Te, color: 'bg-sky-400' },
+                                            { name: 'Ti 内倾思考', val: results.normalized.Ti, color: 'bg-sky-600' },
+                                            { name: 'Fe 外倾情感', val: results.normalized.Fe, color: 'bg-rose-400' },
+                                            { name: 'Fi 内倾情感', val: results.normalized.Fi, color: 'bg-rose-600' }
+                                        ].sort((a, b) => b.val - a.val).map((fn, i) => (
+                                            <div key={i} className="space-y-1">
+                                                <div className="flex justify-between text-[10px] font-bold px-1 text-slate-600">
+                                                    <span>{fn.name}</span>
+                                                    <span>{fn.val}%</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                                                    <div className={`h-full ${fn.color} transition-all duration-1000`} style={{ width: `${fn.val}%` }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <button onClick={() => window.location.reload()} className="w-full py-4 text-indigo-600 font-bold border-2 border-indigo-600 rounded-2xl active:bg-indigo-50">
+                                        重新测评
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 底部装饰 */}
+                        <div className="bg-slate-50 px-6 py-4 shrink-0 text-center">
+                            <p className="text-[10px] text-slate-300 font-medium uppercase tracking-widest">Jungian Matrix Analysis © 2025</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
