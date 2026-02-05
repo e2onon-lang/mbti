@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>oni MBTI v3.0 深度性格测评</title>
+    <title>老少咸宜MBTI V4.0测试版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -34,83 +34,83 @@
         const { useState, useMemo, useEffect } = React;
 
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'oni-mbti-v3';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'oni-mbti-v4';
         let db, auth;
 
-        // --- 60题库：八维(48) + 决策A/O(6) + 温度C/H(6) ---
+        // --- 60题库：去道德化、全年龄段友好描述 ---
         const questions = [
             // Se (1-6)
-            { id: 1, func: 'Se', text: '去陌生城市旅游，我更喜欢直接出门乱逛，看到有趣的店就钻进去。' },
-            { id: 2, func: 'Se', text: '压力大的时候，去健身房大汗淋漓或者吃顿火锅比找人聊天更管用。' },
-            { id: 3, func: 'Se', text: '我能瞬间发现周围环境的小变化，比如同事换了发色或桌上多了一个摆件。' },
-            { id: 4, func: 'Se', text: '我不习惯看厚厚的说明书，更愿意直接上手操作，边做边摸索逻辑。' },
-            { id: 5, func: 'Se', text: '我很享受那种即兴的户外运动或惊险的娱乐项目带来的快感。' },
-            { id: 6, func: 'Se', text: '周围的环境声音或光线稍有变化，我往往是第一个察觉并感到分心的人。' },
+            { id: 1, func: 'Se', text: '去陌生环境时，我习惯四处走走看看，摸摸实物来熟悉这里。' },
+            { id: 2, func: 'Se', text: '身体是否舒服（比如椅子硬不硬、屋里热不热）会直接影响我干活的劲头。' },
+            { id: 3, func: 'Se', text: '我能很快发现别人说话时表情的一点点变化，或者语气里的不自然。' },
+            { id: 4, func: 'Se', text: '我习惯在动手做的过程中发现问题，而不是在那干想半天。' },
+            { id: 5, func: 'Se', text: '我不喜欢一直聊大道理，更想看到实际的行动或者具体的成果。' },
+            { id: 6, func: 'Se', text: '即使人很多，我也能一眼发现谁换了新衣服或者谁今天不太高兴。' },
             // Si (7-12)
-            { id: 7, func: 'Si', text: '出发去远方前，我会反复清点必需品，甚至在心里演练一遍行程。' },
-            { id: 8, func: 'Si', text: '我习惯在固定的几家店点熟悉的外卖，尝试完全陌生新菜品让我感到不安。' },
-            { id: 9, func: 'Si', text: '我能清晰记得几年前某个特殊日子的细节，甚至是当时的穿着和午餐内容。' },
-            { id: 10, func: 'Si', text: '如果日常生活的节奏（比如几点起床、吃饭）被打乱，我会感到非常焦躁。' },
-            { id: 11, func: 'Si', text: '做决定时，我更信任自己亲身经历过的教训，而不是所谓的专家理论。' },
-            { id: 12, func: 'Si', text: '我的办公桌面和房间通常保持在特定的秩序下，这让我感到安心且高效。' },
+            { id: 7, func: 'Si', text: '如果事情没按以前习惯的节奏走，即使结果没变，我心里也会有点别扭。' },
+            { id: 8, func: 'Si', text: '我喜欢留着有纪念意义的老物件，或者翻看旧相片来回味过去。' },
+            { id: 9, func: 'Si', text: '遇到新麻烦，我会先想想以前有没有遇到过类似的事，按老经验来办。' },
+            { id: 10, func: 'Si', text: '我对自己身体的小动静很敏感，比如哪儿不舒服了能马上感觉得到。' },
+            { id: 11, func: 'Si', text: '有规矩、有计划的工作环境让我更安心，太随意的安排会让我手足无措。' },
+            { id: 12, func: 'Si', text: '我记得住很久以前的琐碎小事，比如那会儿的一个味道或者是当时的光亮。' },
             // Ne (13-18)
-            { id: 13, func: 'Ne', text: '聊天时，我经常会从一个话题瞬间联想到好几个毫不相关的新点子上。' },
-            { id: 14, func: 'Ne', text: '我脑子里总有很多“如果...会怎样”的古怪念头，即便它们并不现实。' },
-            { id: 15, func: 'Ne', text: '我常觉得单一的职业路径太无趣，想尝试各种跨度巨大的斜杠生活。' },
-            { id: 16, func: 'Ne', text: '看到一个简单的东西，我能迅速联想到它在不同场景下的多种用途。' },
-            { id: 17, func: 'Ne', text: '我很享受“头脑风暴”的过程，即使最后并没有产生一个具体的落地方案。' },
-            { id: 18, func: 'Ne', text: '我会同时开启好几个兴趣爱好，尽管大多只有短暂的爆发式热情。' },
+            { id: 13, func: 'Ne', text: '我经常因为看到一个东西产生很多联想，结果把手头该干的事给忘了。' },
+            { id: 14, func: 'Ne', text: '我想象各种可能性的劲头很大，可一旦事情进入磨人的执行阶段，我就容易没兴趣。' },
+            { id: 15, func: 'Ne', text: '聊天时，我经常能猜到对方接下来要说什么，然后忍不住想换个新话题。' },
+            { id: 16, func: 'Ne', text: '看到两样完全没关系的东西，我总爱琢磨它们之间是不是有什么关联。' },
+            { id: 17, func: 'Ne', text: '我希望生活里多点意外的惊喜，而不是天天都过得一模一样。' },
+            { id: 18, func: 'Ne', text: '我发现自己经常在这儿试一下、那儿玩一下，很难长时间只干一件事。' },
             // Ni (19-24)
-            { id: 19, func: 'Ni', text: '我总能感觉到一段关系中隐藏的危机，即便表面上看起来风平浪静。' },
-            { id: 20, func: 'Ni', text: '看悬疑电影时，我经常能在剧情过半时就直觉闪现，猜出幕后黑手。' },
-            { id: 21, func: 'Ni', text: '我得出结论的过程很跳跃，经常很难向别人解释我是如何推导出来的。' },
-            { id: 22, func: 'Ni', text: '比起眼前的琐碎事务，我更关心三年、五年后我会成为什么样的人。' },
-            { id: 23, func: 'Ni', text: '我喜欢探究事物背后的深层含义，总觉得很多巧合其实是规律的体现。' },
-            { id: 24, func: 'Ni', text: '比起具体的细节描述，我更擅长捕捉整件事的大致轮廓和未来导向。' },
+            { id: 19, func: 'Ni', text: '有时候我能预感一件事会怎么发展，可真要解释为什么，我也说不上来。' },
+            { id: 20, func: 'Ni', text: '比起眼前的这点好处，我更在意一个项目或一段关系长期会变成什么样。' },
+            { id: 21, func: 'Ni', text: '我经常觉得眼下的事儿好像以前在梦里或者在哪儿预演过一样。' },
+            { id: 22, func: 'Ni', text: '看书或看戏时，我喜欢琢磨那些没说明白的深意，而不是只看热闹。' },
+            { id: 23, func: 'Ni', text: '比起修修补补，我更想弄出一套新法子，让这种麻烦以后再也别发生。' },
+            { id: 24, func: 'Ni', text: '我习惯看大局、抓重点。细节太多了，反而会让我看不清事情的本质。' },
             // Te (25-30)
-            { id: 25, func: 'Te', text: '如果会议偏离了重点且迟迟没有结论，我会忍不住打断并要求做决策。' },
-            { id: 26, func: 'Te', text: '我买东西非常看重性价比和功能性，不太会被那些煽情的广告词洗脑。' },
-            { id: 27, func: 'Te', text: '如果发现某个办事流程效率极低，我会立即想办法制定一套新规则来优化。' },
-            { id: 28, func: 'Te', text: '在评价一个项目时，我首先看实际的产出数据，而不是听讲了多少苦劳。' },
-            { id: 29, func: 'Te', text: '我习惯列出每日的计划清单，并以此来严格管理我的任务优先级。' },
-            { id: 30, func: 'Te', text: '我比较直接，在指出团队里的逻辑错误时不会考虑太多面子问题。' },
+            { id: 25, func: 'Te', text: '我喜欢用看得见的数据或者进度条来衡量事情办得怎么样，省得扯皮。' },
+            { id: 26, func: 'Te', text: '如果发现干活法子太慢，我会直接定个新规矩，哪怕别人觉得我太强势。' },
+            { id: 27, func: 'Te', text: '评价一个人时，我主要看他最后拿出了什么成绩，而不是听他说了多少辛苦。' },
+            { id: 28, func: 'Te', text: '即使还没准备到十全十美，我也想先干起来，停在那儿不动让我最难受。' },
+            { id: 29, func: 'Te', text: '在大家伙里，我更愿意当那个分任务、盯进展的人，这让我心里踏实。' },
+            { id: 30, func: 'Te', text: '我很在意时间。要是大家聚在一起光闲聊没正事，我会想早点儿走。' },
             // Ti (31-36)
-            { id: 31, func: 'Ti', text: '面对那种“大家都这么说”的观点，我非得自己查资料证伪了才放心。' },
-            { id: 32, func: 'Ti', text: '我喜欢钻研复杂的东西，哪怕是一个冷门的游戏机制我也能研究好几天。' },
-            { id: 33, func: 'Ti', text: '我追求表达的极端准确，有时会纠正别人说话中细微的逻辑错误。' },
-            { id: 34, func: 'Ti', text: '比起按照手册操作，我更想拆开来看看这个机器内部到底是怎么转的。' },
-            { id: 35, func: 'Ti', text: '在没彻底想通一件事的原理之前，我很难强迫自己盲目开始执行。' },
-            { id: 36, func: 'Ti', text: '我享受独处思考的宁静，那是我大脑理顺杂乱信息的黄金时间。' },
+            { id: 31, func: 'Ti', text: '我有自己的一套逻辑。即使别人都说对，只要我觉得道理不通，我就不干。' },
+            { id: 32, func: 'Ti', text: '我喜欢把复杂的道理拆开了揉碎了想，这比直接听个结论要有意思得多。' },
+            { id: 33, func: 'Ti', text: '吵架或者讨论时，我能很快听出对方话里的毛病，哪怕这跟心情没关系。' },
+            { id: 34, func: 'Ti', text: '比起干活本身，我更想弄明白这东西背后的原理到底是怎么一回事。' },
+            { id: 35, func: 'Ti', text: '我会为了一个词用得准不准跟人磨半天，因为我觉得说得糊涂太难受。' },
+            { id: 36, func: 'Ti', text: '我爱一个人静静地琢磨事。外面流行什么法子，通常影响不到我的主意。' },
             // Fe (37-42)
-            { id: 37, func: 'Fe', text: '聚会时如果有人被冷落，我会本能地过去找话题，让对方感到自在。' },
-            { id: 38, func: 'Fe', text: '我很擅长察言观色，并根据周围人的情绪及时调整自己的说话语气。' },
-            { id: 39, func: 'Fe', text: '我发现自己很容易受到集体氛围的影响，大家开心我也就跟着开心。' },
-            { id: 40, func: 'Fe', text: '做决策时，我会充分考虑大家的感受，不希望任何一个人感到受委屈。' },
-            { id: 41, func: 'Fe', text: '我经常作为团队里的“润滑剂”，处理成员之间的冲突和摩擦。' },
-            { id: 42, func: 'Fe', text: '当我能给别人提供实际的情绪安慰时，我会感到非常有成就感。' },
+            { id: 37, func: 'Fe', text: '人多的时候，我会不由自主地操心大家高不高兴，有时候自己也觉得累。' },
+            { id: 38, func: 'Fe', text: '拿主意时，我会反复想这事儿会不会让谁心里不舒坦，哪怕道理上没错。' },
+            { id: 39, func: 'Fe', text: '我很会看人下菜碟（褒义），跟不同的人说话我会调整自己的口气。' },
+            { id: 40, func: 'Fe', text: '我很容易受周围人的情绪影响。要是大家都在发牢骚，我就没法静心想事。' },
+            { id: 41, func: 'Fe', text: '我觉得保住大家的和气，比自己非要说个大实话要更要紧。' },
+            { id: 42, func: 'Fe', text: '我发现自己老是在大伙儿中间充当和事佬，劝劝这个、说说那个。' },
             // Fi (43-48)
-            { id: 43, func: 'Fi', text: '即使全世界都不理解，我也希望能坚持做我认为“对”的事情。' },
-            { id: 44, func: 'Fi', text: '我很反感虚伪的社交辞令，更看重人与人之间最真实的流露。' },
-            { id: 45, func: 'Fi', text: '有些底线我绝不会触碰，哪怕周围所有人都觉得那是一件微不足道的小事。' },
-            { id: 46, func: 'Fi', text: '如果某个品牌的理念不符合我的审美或价值，哪怕再流行我也绝不跟风。' },
-            { id: 47, func: 'Fi', text: '我的情感世界非常深沉，但我倾向于藏在心底，不喜欢向外人描述。' },
-            { id: 48, func: 'Fi', text: '对我来说，“知行合一”最重要。如果做不到，我会产生很强的内心冲突。' },
+            { id: 43, func: 'Fi', text: '我宁愿自己一个人呆着，也不想为了让大家高兴而装出一副开心的样子。' },
+            { id: 44, func: 'Fi', text: '我有自己的活法。大家都说“好”的东西，要是跟我心里想的不一样，我也不稀罕。' },
+            { id: 45, func: 'Fi', text: '我心里的事儿只爱跟极少数交心的人说。外人很难看出我到底在想什么。' },
+            { id: 46, func: 'Fi', text: '只要我觉得这事儿办得“心虚”，哪怕道理上赚便宜，我也绝对不干。' },
+            { id: 47, func: 'Fi', text: '我特别看重一个人是不是真诚。要是谁跟我套近乎、演戏，我本能地就想躲。' },
+            { id: 48, func: 'Fi', text: '对我来说，做人得对得起自个儿。要是被迫干了违心的事，我会难受好久。' },
 
             // --- 细分维度 (Subtypes) ---
             // A (利落) vs O (犹豫)
-            { id: 49, func: 'Sub_A', text: '面对突发的小麻烦，我倾向于立刻决定并行动，而不是反复权衡。' },
-            { id: 50, func: 'Sub_O', text: '购买贵重物品前，我通常要对比好几个平台，很难迅速下定决心。' },
-            { id: 51, func: 'Sub_A', text: '我做事追求效率，不喜欢在琐碎的选择细节上耗费太多时间。' },
-            { id: 52, func: 'Sub_O', text: '做重大决定前，我总觉得信息收集得不够，常因担心出错而犹豫。' },
-            { id: 53, func: 'Sub_A', text: '我喜欢那种迅速拍板并进入执行的状态，而不是长时间的反复讨论。' },
-            { id: 54, func: 'Sub_O', text: '我发现自己经常在几个选项间反复横跳，很难彻底定下最终方案。' },
+            { id: 49, func: 'Sub_A', text: '哪怕主意还没想透，我也想先定下来去干。我不怕做错，就怕没准主意。' },
+            { id: 50, func: 'Sub_O', text: '买个大件或者定个大事，我得翻来覆去想好几天，生怕落了什么没考虑到。' },
+            { id: 51, func: 'Sub_A', text: '拿了主意我就不爱回头。对我来说，定下来往前走，比老在那比对强。' },
+            { id: 52, func: 'Sub_O', text: '我发现自己在几个主意中间老是摇摆，总觉得选了这个就会耽误了那个。' },
+            { id: 53, func: 'Sub_A', text: '处理杂事儿我习惯一剪子下去快点干完，不喜欢为了求完美而耽误功夫。' },
+            { id: 54, func: 'Sub_O', text: '大事临头，我爱多问问旁人的主意，总觉得一个人想不稳当。' },
             // C (高冷) vs H (温和)
-            { id: 55, func: 'Sub_C', text: '在不熟悉的环境中，我习惯保持礼貌但有距离感，不主动展现热情。' },
-            { id: 56, func: 'Sub_H', text: '即便第一次见面，我也能自然地释放亲和力，让对方感到轻松。' },
-            { id: 57, func: 'Sub_C', text: '朋友常评价我看起来有点“生人勿进”，有一种不容易被打破的边界感。' },
-            { id: 58, func: 'Sub_H', text: '我习惯主动表达友好，觉得温和的沟通氛围能让事情进展得更顺利。' },
-            { id: 59, func: 'Sub_C', text: '我倾向于保持客观、克制的社交态度，不太习惯表现得过于亲昵。' },
-            { id: 60, func: 'Sub_H', text: '我更享受那种温润、包容的交往状态，愿意主动释放善意去破冰。' }
+            { id: 55, func: 'Sub_C', text: '跟不太熟的人，我习惯客客气气但保持点距离，不太会一下子就表现得很亲热。' },
+            { id: 56, func: 'Sub_H', text: '哪怕是头一回见面，我也能跟人家热络起来，让对方觉得我这人挺好打交道。' },
+            { id: 57, func: 'Sub_C', text: '即使人家对我挺热情，我也得先在心里观察观察，慢热是我的常态。' },
+            { id: 58, func: 'Sub_H', text: '我挺能体会别人的那种拘束感，会主动找话头儿让人家别太尴尬。' },
+            { id: 59, func: 'Sub_C', text: '有人说我这人看起来有点淡，其实我只是觉得交情没到那份儿上，不用太夸张。' },
+            { id: 60, func: 'Sub_H', text: '我喜欢那种和和气气、没火药味的相处法，甚至愿意为此在说话上让着点儿。' }
         ];
 
         const App = () => {
@@ -241,9 +241,8 @@
                 <div className="min-h-screen flex items-center justify-center bg-slate-100 p-2 sm:p-4 text-slate-800 tracking-tight">
                     <div className="max-w-lg w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[92vh] max-h-[850px]">
                         
-                        {/* Header */}
                         <div className="bg-slate-900 py-5 px-8 shrink-0 flex justify-between items-center text-white border-b border-slate-800">
-                            <span className="font-bold uppercase tracking-wide">oni MBTI v3.0</span>
+                            <span className="font-bold tracking-wide">老少咸宜 MBTI V4.0</span>
                             {step === 'quiz' && (
                                 <span className="text-[10px] bg-indigo-600 px-2 py-1 rounded">
                                     {currentIdx + 1} / {questions.length}
@@ -251,15 +250,13 @@
                             )}
                         </div>
 
-                        {/* Main Content */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
                             {step === 'home' && (
                                 <div className="text-center py-10 space-y-6 animate-fade-in">
-                                    <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto text-indigo-600 text-3xl font-black italic shadow-inner">oni</div>
-                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">oni 优化迭代版 MBTI</h2>
+                                    <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto text-indigo-600 text-3xl font-black shadow-inner">4.0</div>
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">老少咸宜 MBTI V4.0 测试版</h2>
                                     <p className="text-slate-500 text-sm leading-relaxed px-4">
-                                        基于 60 道情境题进行荣格八维能量分析，并引入核心细分：<br/>
-                                        <strong>利落(A) / 犹豫(O)</strong> 与 <strong>温和(H) / 高冷(C)</strong>
+                                        基于 60 项日常习惯进行深度分析。不仅呈现荣格八维能量，更针对<strong>行动利落度(A/O)</strong>与<strong>待人温度(H/C)</strong>进行精细刻画。
                                     </p>
                                     <button onClick={() => setStep('quiz')} className="w-full bg-indigo-600 py-4 rounded-2xl text-white font-bold text-lg shadow-xl shadow-indigo-100 active:scale-95 transition-all">
                                         开始测试
@@ -291,7 +288,7 @@
                             {step === 'loading' && (
                                 <div className="py-24 text-center space-y-6">
                                     <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                                    <h3 className="text-lg font-bold text-slate-800">正在分析 60 项情境偏好...</h3>
+                                    <h3 className="text-lg font-bold text-slate-800">正在分析您的性格底色...</h3>
                                 </div>
                             )}
 
@@ -299,13 +296,13 @@
                                 <div className="animate-fade-in space-y-8 pb-10">
                                     <div className="text-center">
                                         <span className="text-6xl font-black text-slate-900 tracking-tighter italic">{testResult.fullCode}</span>
-                                        <p className="text-indigo-600 font-bold mt-2 uppercase tracking-widest text-[10px]">深度细分人格编码</p>
+                                        <p className="text-indigo-600 font-bold mt-2 uppercase tracking-widest text-[10px]">深度细分人格编码报告</p>
                                     </div>
 
                                     <div className="bg-slate-50 p-6 rounded-[2.5rem] space-y-4 border border-slate-100 shadow-sm">
                                         <div className="flex justify-between items-center mb-2 px-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                             <span>八维能量分布</span>
-                                            <span>精准度分析</span>
+                                            <span>日常习惯精准分析</span>
                                         </div>
                                         <div className="space-y-3">
                                             {Object.keys(testResult.normalized).map(k => (
@@ -325,18 +322,19 @@
                                     <div className="mt-12 pt-10 border-t border-slate-100 space-y-5">
                                         <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
                                             <div className="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
-                                            迭代建议
+                                            优化反馈
                                         </div>
                                         <textarea 
                                             value={feedback}
                                             onChange={(e) => setFeedback(e.target.value)}
-                                            placeholder="结果准确吗？题目描述是否好懂？欢迎留下建议..."
+                                            placeholder="结果准确吗？哪些题目听着别扭？欢迎留下改进建议..."
                                             className="w-full h-28 p-4 text-sm bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-100 outline-none placeholder:text-slate-300 shadow-inner"
                                         />
                                         <button disabled={submitting} onClick={submitFeedback} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all disabled:opacity-50">
-                                            {submitting ? '发送中...' : (feedback === "感谢您的建议！" ? "提交成功" : "确认提交反馈")}
+                                            {submitting ? '发送中...' : (feedback === "感谢您的建议！" ? "提交成功" : "确认提交反馈建议")}
                                         </button>
                                     </div>
+
                                     <button onClick={() => window.location.reload()} className="w-full py-4 text-indigo-600 font-bold text-xs uppercase tracking-widest border-2 border-indigo-600 rounded-2xl active:bg-indigo-50 transition-colors">
                                         重新测试
                                     </button>
